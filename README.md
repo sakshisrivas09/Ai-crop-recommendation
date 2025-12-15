@@ -62,18 +62,17 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Generate synthetic data:
+3. (Optional) Generate synthetic data and train the model:
 ```bash
+# Generate synthetic data
 python data/generate_synthetic_data.py
-```
 
-4. Train the model (run Jupyter notebook):
-```bash
-# Open notebooks/train_crop_recommender.ipynb in Jupyter
-# Or run the cells to train and save the model
+# Train the model (open notebooks/train_crop_recommender.ipynb in Jupyter)
+# Or run the notebook cells to train and save the model
 ```
+**Note:** The service includes a pre-trained model (`models/crop_recommender.pkl`). If the model is missing, the service will use rule-based recommendations as a fallback.
 
-5. Run ML service:
+4. Run ML service:
 ```bash
 python main.py
 ```
@@ -82,10 +81,25 @@ ML service runs on http://localhost:8000
 
 ## Running the Complete System
 
-1. Start PostgreSQL
-2. Start ML service: `cd ml-service && python main.py`
-3. Start backend: `cd backend && mvn spring-boot:run`
-4. Start frontend: `cd frontend && npm run dev`
+**Important:** Make sure you have activated the virtual environment for the ML service before running it.
+
+1. Start PostgreSQL database
+2. Start ML service: 
+   ```bash
+   cd ml-service
+   venv\Scripts\activate  # On Windows (or source venv/bin/activate on Linux/Mac)
+   python main.py
+   ```
+3. Start backend: 
+   ```bash
+   cd backend
+   mvn spring-boot:run
+   ```
+4. Start frontend: 
+   ```bash
+   cd frontend
+   npm run dev
+   ```
 
 ## API Documentation
 

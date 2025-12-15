@@ -19,7 +19,9 @@ public class User {
 
     private String region;
 
+    // Avoid recursive serialization when returning Field objects
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Field> fields;
 }
 

@@ -3,8 +3,13 @@ package com.aicrop.service;
 import com.aicrop.model.Field;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,13 +42,24 @@ public class MLService {
     }
 
     public Map<String, Object> diagnoseDisease(byte[] imageBytes) {
-        // Implementation for image upload to ML service
-        // This would typically use multipart/form-data
+        // Send image as multipart/form-data to ML service
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("image", new org.springframework.core.io.ByteArrayResource(imageBytes) {
+            @Override
+            public String getFilename() {
+                return "upload.jpg";
+            }
+        });
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
         return restTemplate.postForObject(
                 mlServiceUrl + "/diagnose",
-                imageBytes,
-                Map.class
-        );
+                requestEntity,
+                Map.class);
     }
 }
 

@@ -15,6 +15,7 @@ public class Field {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("fields")
     private User user;
 
     private Double latitude;
@@ -32,9 +33,11 @@ public class Field {
     private Boolean irrigationAvailable;
 
     @OneToMany(mappedBy = "field", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("field")
     private List<Recommendation> recommendations;
 
     @OneToMany(mappedBy = "field", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("field")
     private List<Image> images;
 
     private LocalDateTime createdAt;

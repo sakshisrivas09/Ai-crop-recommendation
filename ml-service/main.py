@@ -30,8 +30,12 @@ if CROP_MODEL_PATH.exists():
     print(f"Loaded crop recommendation model from {CROP_MODEL_PATH}")
 
 if DISEASE_MODEL_PATH.exists():
-    disease_model = joblib.load(DISEASE_MODEL_PATH)
-    print(f"Loaded disease classification model from {DISEASE_MODEL_PATH}")
+    try:
+        disease_model = joblib.load(DISEASE_MODEL_PATH)
+        print(f"Loaded disease classification model from {DISEASE_MODEL_PATH}")
+    except Exception as e:
+        print(f"Failed to load disease model: {e}. Falling back to rule-based diagnosis.")
+        disease_model = None
 
 
 class PredictionRequest(BaseModel):
@@ -261,13 +265,6 @@ async def diagnose_disease(image: UploadFile = File(...)):
     """
     Diagnose crop disease from image
     """
-    if disease_model is None:
-        return {
-            "disease": "Healthy",
-            "confidence": 0.85,
-            "treatment": "No treatment needed. Crop appears healthy."
-        }
-    
     try:
         # Read image
         from PIL import Image
@@ -275,20 +272,71 @@ async def diagnose_disease(image: UploadFile = File(...)):
         
         image_bytes = await image.read()
         img = Image.open(io.BytesIO(image_bytes))
-        img = img.resize((224, 224))
-        
-        # Preprocess and predict
-        # This is a placeholder - actual implementation would use the loaded model
-        # For now, return a mock response
-        
-        return {
-            "disease": "Leaf Blight",
-            "confidence": 0.78,
-            "treatment": "Apply fungicide containing copper-based compounds. Remove affected leaves."
-        }
-    
+        img = img.convert("RGB").resize((224, 224))
+
+        if disease_model:
+            # TODO: add real preprocessing to match your model's expected input
+            # Example placeholder: flatten image and predict
+            arr = np.array(img).astype("float32") / 255.0
+            arr = np.expand_dims(arr, axis=0)
+            try:
+                pred = disease_model.predict(arr)
+                # You need to map pred -> disease/confidence/treatment for your model
+                # Placeholder mapping:
+                return {
+                    "disease": str(pred),
+                    "confidence": 0.75,
+                    "treatment": "Consult agronomist for specific treatment plan."
+                }
+            except Exception as model_err:
+                print(f"Disease model inference failed: {model_err}. Falling back to rule-based diagnosis.")
+
+        # Rule-based fallback using simple color heuristics
+        diagnosis = diagnose_rule_based(img)
+        return diagnosis
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+
+
+def diagnose_rule_based(img: "Image.Image") -> Dict[str, Any]:
+    """
+    Lightweight heuristic diagnosis for demo purposes.
+    Looks at color statistics to guess common issues.
+    """
+    arr = np.array(img).astype(np.float32)
+    mean_channels = arr.reshape(-1, 3).mean(axis=0)  # R, G, B
+    r, g, b = mean_channels
+
+    # Ratios to detect discoloration
+    yellowish = (r + g) / 2 > b * 1.2
+    brownish = r > g * 1.1 and r > b * 1.1
+    pale = (r + g + b) / 3 < 80
+
+    if yellowish:
+        return {
+            "disease": "Nitrogen Deficiency (heuristic)",
+            "confidence": 0.65,
+            "treatment": "Apply balanced fertilizer rich in nitrogen; monitor leaf recovery.",
+        }
+    if brownish:
+        return {
+            "disease": "Leaf Blight (heuristic)",
+            "confidence": 0.6,
+            "treatment": "Remove affected leaves and apply copper-based fungicide.",
+        }
+    if pale:
+        return {
+            "disease": "Possible Chlorosis (heuristic)",
+            "confidence": 0.55,
+            "treatment": "Check soil pH and iron levels; consider foliar iron spray.",
+        }
+
+    return {
+        "disease": "Healthy (heuristic)",
+        "confidence": 0.8,
+        "treatment": "No treatment needed. Continue monitoring.",
+    }
 
 
 if __name__ == "__main__":

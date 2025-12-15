@@ -30,6 +30,7 @@ export function FieldForm() {
     setLoading(true)
     try {
       const field = await fieldService.createField(formData)
+      console.log("field Created for :", `${field.id}`)
       navigate(`/recommendations/${field.id}`)
     } catch (error) {
       console.error('Error creating field:', error)
